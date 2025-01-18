@@ -17,16 +17,16 @@ def weights_init_normal(m):
             torch.nn.init.constant_(m.bias.data, 0.0)
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, input_channels=4, output_channels=4):
         super(Generator, self).__init__()
-        self.Conv1 = conv_block(4, 16)  # 4-channel input (RGB + Depth)
+        self.Conv1 = conv_block(input_channels, 16)  # Adjustable input channels
         self.Conv2 = conv_block(16, 32)
         self.Conv3 = conv_block(32, 64)
         self.Conv4 = conv_block(64, 128)
         self.Up1 = up_conv(128, 64)
         self.Up2 = up_conv(64, 32)
         self.Up3 = up_conv(32, 16)
-        self.Output = nn.Conv2d(16, 4, kernel_size=1)  # 4-channel output
+        self.Output = nn.Conv2d(16, output_channels, kernel_size=1)  # Adjustable output channels
 
     def forward(self, x):
         e1 = self.Conv1(x)
@@ -45,9 +45,9 @@ class Generator(nn.Module):
         return [d1, d2, d3, out]
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, input_channels=8):  # Adjustable input channels for concatenated inputs
         super(Discriminator, self).__init__()
-        self.initial_conv = DisGeneralConvBlock(8, 64)  # Updated for 8 input channels
+        self.initial_conv = DisGeneralConvBlock(input_channels, 64)
         self.layers = nn.ModuleList([
             DisGeneralConvBlock(128, 128),
             DisGeneralConvBlock(256, 256),
