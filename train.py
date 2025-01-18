@@ -11,9 +11,7 @@ from net.Ushape_Trans import Generator, Discriminator, weights_init_normal
 PATH_INPUT = './dataset/UIEB/input'
 PATH_DEPTH = './DPT/output_monodepth/UIEB/'
 PATH_GT = './dataset/UIEB/GT/'
-# SAVE_DIR = './save_model/'
 SAVE_DIR = '/content/drive/My Drive/My_Datasets/save_model/'
-
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 
@@ -117,7 +115,7 @@ for epoch in range(n_epochs):
         loss_GAN = criterion_GAN(pred_fake, torch.ones_like(pred_fake))
         loss_pixel = criterion_pixelwise(fake_B[-1], real_B)
         loss_perceptual = perceptual_loss(fake_B[-1], real_B)
-        loss_G = loss_GAN + 100 * loss_pixel + 10 * loss_perceptual
+        loss_G = loss_GAN + 10 * loss_pixel + 20 * loss_perceptual
         optimizer_G.zero_grad()
         loss_G.backward(retain_graph=True)
         optimizer_G.step()
@@ -144,13 +142,21 @@ for epoch in range(n_epochs):
 
         print(f"[Epoch {epoch+1}/{n_epochs}] [Batch {i+1}/{len(train_loader)}] [D loss: {loss_D.item():.4f}] [G loss: {loss_G.item():.4f}]")
 
-    # Save per-epoch models every `save_freq` epochs
+    # Save per-epoch models and optimizers every `save_freq` epochs
     if (epoch + 1) % save_freq == 0 or epoch == n_epochs - 1:
         torch.save(generator.state_dict(), os.path.join(SAVE_DIR, f'generator_epoch_{epoch+1}.pth'))
         torch.save(discriminator.state_dict(), os.path.join(SAVE_DIR, f'discriminator_epoch_{epoch+1}.pth'))
-        print(f"Saved models for epoch {epoch+1}.")
+        torch.save({
+            'optimizer_G': optimizer_G.state_dict(),
+            'optimizer_D': optimizer_D.state_dict()
+        }, os.path.join(SAVE_DIR, f'optimizers_epoch_{epoch+1}.pth'))
+        print(f"Saved models and optimizers for epoch {epoch+1}.")
 
-# Save final models
+# Save final models and optimizers
 torch.save(generator.state_dict(), os.path.join(SAVE_DIR, 'generator_final.pth'))
 torch.save(discriminator.state_dict(), os.path.join(SAVE_DIR, 'discriminator_final.pth'))
-print(f"Final generator and discriminator models saved to {SAVE_DIR}.")
+torch.save({
+    'optimizer_G': optimizer_G.state_dict(),
+    'optimizer_D': optimizer_D.state_dict()
+}, os.path.join(SAVE_DIR, 'optimizers_final.pth'))
+print(f"Final generator, discriminator, and optimizers saved to {SAVE_DIR}.")
