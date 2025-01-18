@@ -10,8 +10,10 @@ from net.Ushape_Trans import Generator, Discriminator, weights_init_normal
 PATH_INPUT = './dataset/UIEB/input'
 PATH_DEPTH = './DPT/output_monodepth/UIEB/'
 PATH_GT = './dataset/UIEB/GT/'
-SAVE_DIR = './save_model/'
+# SAVE_DIR = './save_model/'
+SAVE_DIR = '/content/drive/My Drive/My_Datasets/save_model/'
 
+# Create the save directory if it doesn't exist
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 class DepthDataset(Dataset):
@@ -132,13 +134,18 @@ if __name__ == "__main__":
 
         # Save models and optimizers every 5 epochs
         if (epoch + 1) % save_freq == 0:
-            torch.save(generator.state_dict(), os.path.join(SAVE_DIR, f'generator_epoch_{epoch+1}.pth'))
-            torch.save(discriminator.state_dict(), os.path.join(SAVE_DIR, f'discriminator_epoch_{epoch+1}.pth'))
+            generator_path = os.path.join(SAVE_DIR, f'generator_epoch_{epoch+1}.pth')
+            discriminator_path = os.path.join(SAVE_DIR, f'discriminator_epoch_{epoch+1}.pth')
+            optimizers_path = os.path.join(SAVE_DIR, f'optimizers_epoch_{epoch+1}.pth')
+
+            torch.save(generator.state_dict(), generator_path)
+            torch.save(discriminator.state_dict(), discriminator_path)
             torch.save({
                 'optimizer_G': optimizer_G.state_dict(),
                 'optimizer_D': optimizer_D.state_dict(),
-            }, os.path.join(SAVE_DIR, f'optimizers_epoch_{epoch+1}.pth'))
-            print(f"Saved models and optimizers for epoch {epoch+1}.")
+            }, optimizers_path)
+
+            print(f"Saved models and optimizers for epoch {epoch+1} at: {SAVE_DIR}")
 
     # Save final models
     torch.save(generator.state_dict(), os.path.join(SAVE_DIR, 'generator_final.pth'))
