@@ -19,28 +19,32 @@ def calculate_psnr(img1, img2):
 def calculate_uciqe(image):
     """
     Compute UCIQE (Underwater Color Image Quality Evaluation) for an image.
-    UCIQE considers:
-    - Chromaticity (colorfulness).
-    - Contrast of luminance.
-    - Saturation.
+    Ensures all components are normalized to the [0, 1] range.
     """
-    image = image.astype(np.float32) / 255.0
-    lab = cv2.cvtColor((image * 255).astype(np.uint8), cv2.COLOR_RGB2LAB)
+    # Ensure the image is in the [0, 255] range for LAB conversion
+    image = (image * 255).astype(np.uint8)
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
     L, A, B = cv2.split(lab)
 
     # Contrast of Luminance
-    L_contrast = np.std(L) / 100.0
+    L_contrast = np.std(L) / 100.0  # Normalize by dividing by 100 to ensure [0, 1] range
 
     # Average chroma (colorfulness)
-    chroma = np.sqrt(A**2 + B**2)
-    chroma_mean = np.mean(chroma)
+    chroma = np.sqrt(A**2 + B**2)  # Compute chroma without normalization
+    chroma_mean = np.mean(chroma) / 128.0  # Normalize by dividing by 128 to ensure [0, 1] range
 
     # Saturation
-    saturation = chroma / (L + 1e-6)  # Avoid division by zero
-    saturation_mean = np.mean(saturation)
+    L_normalized = L / 255.0 + 1e-6  # Normalize luminance to [0, 1] and avoid division by zero
+    saturation = chroma / L_normalized  # Saturation based on normalized luminance
+    saturation_mean = np.mean(saturation) / 10.0  # Normalize by dividing by 10 to ensure [0, 1] range
+
+    # Ensure all values are in the expected range
+    L_contrast = np.clip(L_contrast, 0, 1)
+    chroma_mean = np.clip(chroma_mean, 0, 1)
+    saturation_mean = np.clip(saturation_mean, 0, 1)
 
     # UCIQE Calculation
-    uciqe = 0.0282 * L_contrast + 0.2953 * chroma_mean + 0.3228 * saturation_mean
+    uciqe = 0.4680 * L_contrast + 0.2745 * chroma_mean + 0.2576 * saturation_mean
     return uciqe
 
 def evaluate_metrics(enhanced_dir, gt_dir, output_csv):
@@ -121,7 +125,7 @@ def evaluate_metrics(enhanced_dir, gt_dir, output_csv):
 
 if __name__ == "__main__":
     # Paths to the directories
-    ENHANCED_DIR = './test/out/'     # Directory containing DAUT enhanced images
+    ENHANCED_DIR = './test/n/'     # Directory containing DAUT enhanced images
     GT_DIR = './dataset/UIEB/GT/'    # Directory containing ground truth images
     OUTPUT_CSV = './evaluation_results.csv'  # Path to save evaluation results
 
